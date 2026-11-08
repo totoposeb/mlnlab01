@@ -1,0 +1,135 @@
+---
+title: "Computer lab 1 block 1"
+subtitle: "732A99/732A68/TDDE01 Machine Learning"
+author: "Name (LiU-ID)"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+# Code is hidden in the report body and printed in full in the Appendix
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+```
+
+# Assignment 1. Handwritten digit recognition with K-nearest neighbors
+
+```{r a1-data}
+library(kknn)
+
+# optdigits.csv has no header: 64 pixel columns + last column = digit (0-9)
+digits <- read.csv("../data/optdigits.csv", header = FALSE)
+colnames(digits)[ncol(digits)] <- "digit"
+digits$digit <- as.factor(digits$digit)
+```
+
+## 1. Data partitioning
+
+```{r a1-split}
+```
+
+## 2. 30-nearest neighbor classifier
+
+```{r a1-knn30}
+```
+
+## 3. Easiest and hardest cases of digit "8"
+
+```{r a1-digit8}
+```
+
+## 4. Misclassification error for K = 1, ..., 30
+
+```{r a1-misclass}
+```
+
+## 5. Cross-entropy for K = 1, ..., 30
+
+```{r a1-crossentropy}
+```
+
+# Assignment 2. Linear regression and ridge regression
+
+```{r a2-data}
+# check.names = FALSE keeps the original column names, e.g. "Jitter(%)"
+parkinsons <- read.csv("../data/parkinsons.csv", check.names = FALSE)
+
+# Keep only the target and the 16 voice features
+# (drops subject#, age, sex, test_time, total_UPDRS)
+parkinsons <- parkinsons[, c("motor_UPDRS", colnames(parkinsons)[7:22])]
+```
+
+## 1. Data partitioning and scaling
+
+```{r a2-split}
+```
+
+## 2. Linear regression
+
+```{r a2-lm}
+```
+
+## 3. Log-likelihood, Ridge, RidgeOpt and DF functions
+
+```{r a2-functions}
+# Base R only (no external packages)
+
+# a. Loglikelihood(theta, sigma)
+
+# b. Ridge(theta, sigma, lambda)
+
+# c. RidgeOpt(lambda)
+
+# d. DF(lambda)
+```
+
+## 4. Ridge regression for lambda = 1, 100, 1000
+
+```{r a2-ridge}
+```
+
+# Assignment 3. Logistic regression and basis function expansion
+
+```{r a3-data}
+# No header; columns are in the order listed in the lab PDF
+pima <- read.csv("../data/pima-indians-diabetes.csv", header = FALSE,
+                 col.names = c("pregnant", "glucose", "pressure", "triceps",
+                               "insulin", "bmi", "pedigree", "age", "diabetes"))
+```
+
+## 1. Plasma glucose concentration vs age
+
+```{r a3-scatter}
+```
+
+## 2. Logistic regression with r = 0.5
+
+```{r a3-logreg}
+```
+
+## 3. Decision boundary
+
+```{r a3-boundary}
+```
+
+## 4. Thresholds r = 0.2 and r = 0.8
+
+```{r a3-thresholds}
+```
+
+## 5. Basis function expansion
+
+```{r a3-basis}
+```
+
+# Assignment 4. Theory
+
+## Why can it be important to consider various probability thresholds in classification problems?
+
+## What ways of collecting correct values of the target variable for supervised learning problems are mentioned in the book?
+
+## How can one express the cost function of linear regression in matrix form?
+
+# Appendix: Code
+
+```{r appendix, ref.label=setdiff(knitr::all_labels(), c("setup", "appendix")), echo=TRUE, eval=FALSE}
+```
