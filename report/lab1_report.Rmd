@@ -1,7 +1,7 @@
 ---
 title: "Computer lab 1 block 1"
 subtitle: "732A99/732A68/TDDE01 Machine Learning"
-author: "Name (LiU-ID)"
+author: "Giulio Collazuol (LiU-ID), Valentín Rapetti (LiU-ID), Sebastián Soriano Pérez (LiU-ID)"
 date: "`r Sys.Date()`"
 output: pdf_document
 ---
@@ -29,26 +29,201 @@ digits$digit <- as.factor(digits$digit)
 ## 1. Data partitioning
 
 ```{r a1-split}
+n <- dim(digits)[1]
+set.seed(12345)
+id_train <- sample(1:n, floor(n * 0.5))
+train <- digits[id_train,]
+
+id_tmp <- setdiff(1:n, id_train)
+set.seed(12345)
+id_valid <- sample(id_tmp, floor(n * 0.25))
+valid <- digits[id_valid,]
+
+id_test <- setdiff(id_tmp, id_valid)
+test <- digits[id_test,]
 ```
 
 ## 2. 30-nearest neighbor classifier
 
 ```{r a1-knn30}
+# Fits models
+fit_train <- kknn(
+  digit ~ ., train = train, test = train, k = 30, kernel = "rectangular"
+)
+fit_test <- kknn(
+  digit ~ ., train = train, test = test, k = 30, kernel = "rectangular"
+)
+```
+
+```{r a1-knn30-errors}
+# Gets confusion matrices
+cm_train <- table(True = train$digit, Predicted = fit_train$fitted.values)
+cm_test <- table(True = test$digit, Predicted = fit_test$fitted.values)
+
+# Defines missclass function to calculate classification error
+missclass <- function(true, predicted) {
+  n <- length(true)
+  1 - sum(diag(table(true, predicted))) / n
+}
+
+# Calculates errors
+print("Train classification error:")
+print(round(missclass(train$digit, fit_train$fitted.values), 4))
+print("Test classification error:")
+print(round(missclass(test$digit, fit_test$fitted.values), 4))
+
+# Defines digit_missclass function to get each digit's classification error
+digit_missclass <- function(true, predicted) {
+  1 - diag(table(true, predicted)) / rowSums(table(true, predicted))
+}
+
+# Calculates each digit's classification error
+print("Train classification error per digit:")
+print(round(digit_missclass(train$digit, fit_train$fitted.values), 4))
+print("Test classification error per digit:")
+print(round(digit_missclass(test$digit, fit_test$fitted.values), 4))
 ```
 
 ## 3. Easiest and hardest cases of digit "8"
 
-```{r a1-digit8}
+```{r a1-digit8, fig.show="hold", out.width="19%", fig.width=3, fig.height=3.3}
+# Gets the predicted probabilities for the digit 8
+idx_8 <- which(train$digit == "8")
+prob_8 <- fit_train$prob[idx_8, "8"]
+
+# Gets the 2 samples of 8 with the highest probability and the 3 with the lowest
+easiest <- idx_8[order(prob_8, decreasing = TRUE)[1:2]]
+hardest <- idx_8[order(prob_8)[1:3]]
+
+# Reshapes one training row into the 8x8 image (pixels are stored row by row)
+plot_digit <- function(i, title) {
+  img <- matrix(as.numeric(train[i, 1:64]), nrow = 8, byrow = TRUE)
+  # heatmap() draws row 1 at the bottom, so reverse the rows to show the
+  # digit upright; scale = "none" keeps the raw pixel counts
+  heatmap(
+    img[8:1, ], Colv = NA, Rowv = NA, scale = "none", labRow = NA, labCol = NA,
+    main = title, col = grey(seq(1, 0, length.out = 17))
+  )
+}
+
+for (i in easiest) {
+  plot_digit(i, sprintf("Easy: p = %.2f", fit_train$prob[i, "8"]))
+}
+for (i in hardest) {
+  plot_digit(i, sprintf("Hard: p = %.2f", fit_train$prob[i, "8"]))
+}
 ```
+
 
 ## 4. Misclassification error for K = 1, ..., 30
 
 ```{r a1-misclass}
+get_knn_missclass_error <- function(train, valid, k) {
+  # Fits models
+  fit_train <- kknn(
+    digit ~ ., train = train, test = train, k = k, kernel = "rectangular"
+  )
+  fit_valid <- kknn(
+    digit ~ ., train = train, test = valid, k = k, kernel = "rectangular"
+  )
+
+  # Calculates train and validation error rates
+  error_train <- missclass(train$digit, fit_train$fitted.values)
+  error_valid <- missclass(valid$digit, fit_valid$fitted.values)
+
+  c(error_train = error_train, error_valid = error_valid)
+}
+
+# Calculates errors for each value of k from 1 to 30
+errors <- sapply(1:30, function(k) get_knn_missclass_error(train, valid, k))
 ```
+
+```{r a1-misclass-plot, fig.width=6, fig.height=4, fig.cap="Training and validation misclassification error for k = 1, ..., 30."}
+k_values <- 1:30
+k_opt <- which.min(errors["error_valid", ])
+col_train <- "#2a78d6"  # blue
+col_valid <- "#eb6834"  # orange
+
+# Plots an empty plot first so the grid and the k marker sit behind the lines
+plot(
+  k_values, errors["error_train",], type = "n", xaxt = "n",
+  xlim = c(1, 34), ylim = c(0, max(errors)), las = 1, bty = "l",
+  xlab = "k (number of neighbours)", ylab = "Misclassification error"
+)
+axis(1, at = c(1, seq(5, 30, by = 5)))
+abline(h = axTicks(2), col = "grey90")
+abline(v = k_opt, lty = 2, col = "grey50")
+
+# Adds lines with train and validation errors
+lines(
+  k_values, errors["error_train", ], type = "o", pch = 19, cex = 0.7,
+  lwd = 2, col = col_train
+)
+lines(
+  k_values, errors["error_valid", ], type = "o", pch = 17, cex = 0.8,
+  lwd = 2, col = col_valid
+)
+
+# Labels at the right end of each line, and the optimal K
+text(30, errors[, 30], c("Training", "Validation"), pos = 4, cex = 0.85)
+text(
+  k_opt, max(errors), paste("optimal k =", k_opt), pos = 4, cex = 0.85,
+  col = "grey30"
+)
+legend(
+  "bottomright", legend = c("Training", "Validation"),
+  col = c(col_train, col_valid), pch = c(19, 17), lwd = 2, bty = "n"
+  )
+```
+
 
 ## 5. Cross-entropy for K = 1, ..., 30
 
 ```{r a1-crossentropy}
+get_knn_cross_entropy <- function(train, valid, k) {
+  fit_valid <- kknn(
+    digit ~ ., train = train, test = valid, k = k, kernel = "rectangular"
+  )
+  prob <- fit_valid$prob
+
+  # Indicator matrix I(Y_i = C_m): one row per observation, one column per digit
+  Y <- outer(valid$digit, colnames(prob), "==")
+
+  # Cross-entropy as on Lecture 1a, slide 27 (1e-15 avoids log(0))
+  -sum(Y * log(prob + 1e-15))
+}
+
+cross_entropy <- sapply(
+  1:30, function(k) get_knn_cross_entropy(train, valid, k)
+)
+```
+
+```{r a1-crossentropy-plot, fig.width=6, fig.height=4, fig.cap="Validation cross-entropy for k = 1, ..., 30."}
+k_values <- 1:30
+k_opt_ce <- which.min(cross_entropy)
+col_valid <- "#eb6834"  # orange, as the validation line in the Task 4 plot
+
+# Plots an empty plot first so the grid and the k marker sit behind the line
+plot(
+  k_values, cross_entropy, type = "n", xaxt = "n",
+  ylim = c(0, max(cross_entropy)), las = 1, bty = "l",
+  xlab = "k (number of neighbours)", ylab = "Validation cross-entropy"
+)
+axis(1, at = c(1, seq(5, 30, by = 5)))
+abline(h = axTicks(2), col = "grey90")
+abline(v = k_opt_ce, lty = 2, col = "grey50")
+
+# Adds the validation cross-entropy line
+lines(
+  k_values, cross_entropy, type = "o", pch = 17, cex = 0.8,
+  lwd = 2, col = col_valid
+)
+
+# Marks the optimal k
+text(
+  k_opt_ce, max(cross_entropy), paste("optimal k =", k_opt_ce),
+  pos = 4, cex = 0.85, col = "grey30"
+)
 ```
 
 # Assignment 2. Linear regression and ridge regression
