@@ -1,9 +1,14 @@
 ---
-title: "Computer lab 1 block 1"
-subtitle: "732A99/732A68/TDDE01 Machine Learning"
-author: "Giulio Collazuol (LiU-ID), Valentín Rapetti (LiU-ID), Sebastián Soriano Pérez (LiU-ID)"
+title: "Computer Lab 1 Block 1"
+subtitle: "732A99 Machine Learning"
+author: "Giulio Collazuol (LiU-ID), Valentín Rapetti (LiU-ID), Sebastián Soriano Pérez (sebso409)"
 date: "`r Sys.Date()`"
 output: pdf_document
+header-includes:
+  # Keeps figures and tables where they are in the text instead of floating
+  - \usepackage{float}
+  - \floatplacement{figure}{H}
+  - \floatplacement{table}{H}
 ---
 
 ```{r setup, include=FALSE}
@@ -16,6 +21,11 @@ knitr::opts_knit$set(root.dir = "..")
 ```
 
 # Assignment 1. Handwritten digit recognition with K-nearest neighbors
+
+The data file `optdigits.csv` contains information about normalized bitmaps of
+handwritten digits, each column representing a pixel in an 8x8 image as an
+integer in the range from 0 to 16, with the last column containing the actual
+digit. We first loaded the file as a data.frame `digits`.
 
 ```{r a1-data}
 library(kknn)
@@ -43,6 +53,15 @@ id_test <- setdiff(id_tmp, id_valid)
 test <- digits[id_test,]
 ```
 
+The data.frame `digits` was then split into the following data.frames randomly:
+
+- 50% `train`: 1911 rows
+- 25% `valid`: 955 rows
+- 25% `test`: 957 rows
+
+For this, we used the code from Lecture 1a ("Holdout in R") and we set a seed
+with `set.seed(12345)`.
+
 ## 2. 30-nearest neighbor classifier
 
 ```{r a1-knn30}
@@ -66,27 +85,84 @@ missclass <- function(true, predicted) {
   1 - sum(diag(table(true, predicted))) / n
 }
 
-# Calculates errors
-print("Train classification error:")
-print(round(missclass(train$digit, fit_train$fitted.values), 4))
-print("Test classification error:")
-print(round(missclass(test$digit, fit_test$fitted.values), 4))
-
 # Defines digit_missclass function to get each digit's classification error
 digit_missclass <- function(true, predicted) {
   1 - diag(table(true, predicted)) / rowSums(table(true, predicted))
 }
 
-# Calculates each digit's classification error
-print("Train classification error per digit:")
-print(round(digit_missclass(train$digit, fit_train$fitted.values), 4))
-print("Test classification error per digit:")
-print(round(digit_missclass(test$digit, fit_test$fitted.values), 4))
+# Shows the error per digit and overall, for training and test data
+error_table <- rbind(
+  Training = c(
+    digit_missclass(train$digit, fit_train$fitted.values),
+    All = missclass(train$digit, fit_train$fitted.values)
+  ),
+  Test = c(
+    digit_missclass(test$digit, fit_test$fitted.values),
+    All = missclass(test$digit, fit_test$fitted.values)
+  )
+)
+knitr::kable(
+  error_table, digits = 3, format.args = list(nsmall = 3),
+  caption = "Misclassification error per digit and overall (k = 30)."
+)
 ```
+
+As expected, we observe the train misclassification error (`0.045`) is smaller
+than the test misclassification error (`0.053`). The train error is
+slightly smaller as it is calculated on the same data that is used in the
+KNN model. This small gap shows little overfitting.
+
+The digit `0` has the lowest train error at `0.000` and the third lowest test
+error at `0.013` after the digits `6` and `7`. The digit `6` has the lowest
+test error at `0.000` and is tied for the second lowest train error at `0.010`
+with the digit `2`. This tells us that these digits are the easiest ones to
+recognize in this handwritten set, considering its low resolution.
+
+On the other hand, the digit `4` has the highest train error at `0.091` and the
+highest test error at `0.138`, followed by `8` at `0.103`, and `5` at `0.097`.
+The digit `4` is thus the hardest one to recognize in this dataset.
+
+<!-- Narrower table columns so both confusion matrices fit side by side -->
+\setlength{\tabcolsep}{3pt}
+
+```{r a1-confusion}
+# Shows the confusion matrices side by side
+# (rows: true digit, columns: predicted digit).
+# The two LaTeX commands centre the tables and leave a 1 cm gap between them
+knitr::kables(
+  list(
+    "\\centering",
+    knitr::kable(cm_train),
+    "\\hspace{1cm}",
+    knitr::kable(cm_test)
+  ),
+  caption = paste(
+    "Confusion matrices for the 30-nearest neighbour classifier:",
+    "train (left) and test (right).",
+    "Rows are the true digits, columns the predicted digits."
+  )
+)
+```
+
+\setlength{\tabcolsep}{6pt}
+
+Looking at the confusion matrices, the diagonals tell us most samples are
+correctly classified as expected. Every other cell outside the main diagonal
+contains the samples that were incorrectly classified. On the train data we can
+see the most common error was the digit `1` being misclassified as `2`, followed
+closely by `8` as `1`, which is the most common error on the test data. This
+could be due to the dataset's low resolution which does not allow the `8`'s
+details in the middle to be displayed clearly. Other common mistakes are
+misclassifying the digit `4` as `7` or the digit `5` as `9`. A higher resolution
+dataset may decrease the incidence of these errors.
+
+In conclusion, the 30-NN classifier does a good overall job for this dataset,
+with a test accuracy of `94.7%`.
+
 
 ## 3. Easiest and hardest cases of digit "8"
 
-```{r a1-digit8, fig.show="hold", out.width="19%", fig.width=3, fig.height=3.3}
+```{r a1-digit8, fig.show="hold", out.width="19%", fig.width=4, fig.height=4.4, fig.cap="The two easiest (left) and three hardest (right) cases of digit 8 in the training data. p is the predicted probability of the correct class."}
 # Gets the predicted probabilities for the digit 8
 idx_8 <- which(train$digit == "8")
 prob_8 <- fit_train$prob[idx_8, "8"]
@@ -101,8 +177,10 @@ plot_digit <- function(i, title) {
   # heatmap() draws row 1 at the bottom, so reverse the rows to show the
   # digit upright; scale = "none" keeps the raw pixel counts
   heatmap(
-    img[8:1, ], Colv = NA, Rowv = NA, scale = "none", labRow = NA, labCol = NA,
-    main = title, col = grey(seq(1, 0, length.out = 17))
+    img[8:1,], Colv = NA, Rowv = NA, scale = "none", labRow = NA, labCol = NA,
+    main = title, col = grey(seq(1, 0, length.out = 17)),
+    # The frame keeps all five images at the same scale in the PDF
+    add.expr = box(col = "grey60")
   )
 }
 
@@ -113,6 +191,18 @@ for (i in hardest) {
   plot_digit(i, sprintf("Hard: p = %.2f", fit_train$prob[i, "8"]))
 }
 ```
+
+Here are the two easiest and the three hardest cases for the digit `8`, that is
+the two with the highest predicted probability and the three with the lowest.
+With the data resolution, we can clearly see the first two are the digit `8`,
+while the last three could be easily mistaken for other digits as the
+characteristic round figures from the digit `8` cannot be observed. These could
+be easily mistaken as `1` or `6` or some other digit.
+
+In the 64-dimensional space of our features, these cases are not spatially close
+to the other samples of the digit `8`, and therefore their predicted probability
+of being `8` is low. Most of their 30 closest neighbors in this space belong to
+other classes.
 
 
 ## 4. Misclassification error for K = 1, ..., 30
@@ -140,7 +230,7 @@ errors <- sapply(1:30, function(k) get_knn_missclass_error(train, valid, k))
 
 ```{r a1-misclass-plot, fig.width=6, fig.height=4, fig.cap="Training and validation misclassification error for k = 1, ..., 30."}
 k_values <- 1:30
-k_opt <- which.min(errors["error_valid", ])
+k_opt <- which.min(errors["error_valid",])
 col_train <- "#2a78d6"  # blue
 col_valid <- "#eb6834"  # orange
 
@@ -156,11 +246,11 @@ abline(v = k_opt, lty = 2, col = "grey50")
 
 # Adds lines with train and validation errors
 lines(
-  k_values, errors["error_train", ], type = "o", pch = 19, cex = 0.7,
+  k_values, errors["error_train",], type = "o", pch = 19, cex = 0.7,
   lwd = 2, col = col_train
 )
 lines(
-  k_values, errors["error_valid", ], type = "o", pch = 17, cex = 0.8,
+  k_values, errors["error_valid",], type = "o", pch = 17, cex = 0.8,
   lwd = 2, col = col_valid
 )
 
@@ -175,6 +265,47 @@ legend(
   col = c(col_train, col_valid), pch = c(19, 17), lwd = 2, bty = "n"
   )
 ```
+
+Figure 2 shows a small `k` returns a more flexible and complex model, while a
+large `k` produces a smoother and simpler model. The misclassification errors
+mostly increase as `k` increases. It is self-evident that using `k=1` returns an
+error of `0` on the training data as each observation is its own prediction. For
+the validation set, the error first decreases and is minimized at `k=3` and
+`k=4`. We are using `k=3` as it is the first one.
+
+```{r a1-misclass-optimal}
+# Sets the optimal value of k
+k <- 3
+
+# Fits a new model to get the test error
+fit_test <- kknn(
+  digit ~ ., train = train, test = test, k = k, kernel = "rectangular"
+)
+
+# Gets train and valid results
+errors <- get_knn_missclass_error(train, valid, k)
+
+# Shows the training, validation and test errors for the optimal k
+knitr::kable(
+  data.frame(
+    Training = errors["error_train"],
+    Validation = errors["error_valid"],
+    Test = missclass(test$digit, fit_test$fitted.values)
+  ),
+  digits = 4, format.args = list(nsmall = 4), row.names = FALSE,
+  caption = paste0(
+    "Misclassification errors for the optimal k (k = ", k, ")."
+  )
+)
+```
+
+For our chosen 3-NN model, the test error is equal to `0.0240` (`97.6%`
+accuracy), which is very close to the validation error of `0.0251`, so the
+validation set was a good guide. Both of these values are considerably larger
+than the train error of `0.0115`, which suggests some overfitting. Figure 2
+shows that at `k=7` both error lines are closest to each other, however the
+validation error is higher at that point. Overall, the 3-NN model has less than
+half the test error of the 30-NN model (`0.053`).
 
 
 ## 5. Cross-entropy for K = 1, ..., 30
@@ -225,6 +356,18 @@ text(
   pos = 4, cex = 0.85, col = "grey30"
 )
 ```
+
+Figure 3 shows the validation cross-entropy at different values of `k`. Here, we
+observe that the optimal value is `k=6`. We can observe that for small values of
+`k` the cross-entropy is the highest. At `k=1` every misclassified sample gets
+a probability `0` which adds $-log(1\times10^{-15})\approx34.5$ to the sum.
+
+Using the cross-entropy may suit a multinomial response better because it is the
+minus log-likelihood of the multinomial model. It also uses the predicted
+probabilities instead of only using the predicted class. Thus, it rewards the
+model's confidence in its correct predictions and penalizes its confident
+incorrect predictions as well.
+
 
 # Assignment 2. Linear regression and ridge regression
 
