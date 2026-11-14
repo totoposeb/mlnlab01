@@ -382,7 +382,14 @@ parkinsons <- parkinsons[, c("motor_UPDRS", colnames(parkinsons)[7:22])]
 
 # Assignment 3. Logistic regression and basis function expansion
 
-```{r a3-data}
+The data file pima-indians-diabetes.csv contains information about the onset of
+diabetes within 5 years in Pima Indians given medical details. The datasets
+contains in the colums nine variables. The ones which will be considered
+in this lab are the second, Plasma glucose concentration a 2 hours in an oral glucose tolerance test;
+the eighth, Body mass index (weight in kg/(height in m)^2); and the 
+ninth, presence of diabetes (0=no or 1=yes)
+
+```{r a3-data,include=FALSE}
 # No header; columns are in the order listed in the lab PDF
 pima <- read.csv(
   "data/pima-indians-diabetes.csv",
@@ -393,6 +400,139 @@ pima <- read.csv(
   )
 )
 ```
+## 1. Scatterplot  
+
+The following scatterplot displays plasma glucose concentration against age. Observations are coloured according to diabetes status: blue indicates the presence of diabetes, red indicates its absence.
+
+```{r scatter1, echo=FALSE}
+#scatterplot of glucose over age, color shows the real #diabete levels
+colori<-ifelse(pima$diabetes==1, 'blue', 'red')
+plot(x=pima$age, y= pima$glucose, col=colori, xlab = "Age", ylab = "Glucose")
+```
+
+From the scatterplot, it appears that glucose concentration is more informative for predicting diabetes than age. However, the two classes exhibit substantial overlap, and no clear separation between diabetic and non-diabetic individuals is visible. Consequently, we do not expect the classification task to be much informative.
+
+## 2. Logistic regression model 
+
+We estimate a logistic regression model using glucose concentration and age as explanatory variables.
+The probabilistic equations are: $P(Y=1 \mid x)=\frac{\exp(\beta_0+\beta_1\,\text{glucose}+\beta_2\,\text{age})}{1+\exp(\beta_0+\beta_1\,\text{glucose}+\beta_2\,\text{age})}$
+
+and $P(Y=0 \mid x)=1-\frac{\exp(\beta_0+\beta_1\,\text{glucose}+\beta_2\,\text{age})}{1+\exp(\beta_0+\beta_1\,\text{glucose}+\beta_2\,\text{age})}$. We use a classification threshold of r=0.5r = 0.5r=0.5. Therefore, an individual is classified as diabetic whenever the predicted probability of diabetes exceeds 0.5.
+
+```{r logistic_model, include=FALSE}
+# Logistic model of diabetes over glucose and age obtained #with glm function
+modello<- glm(diabetes~glucose+age, family = binomial(link="logit"), 
+              data = pima )
+predizioni <- predict(modello, type =  'response')
+predizioni[predizioni<=0.5]<- 0
+predizioni[predizioni>0.5]<- 1
+# Predicted values of the diabetes variable according to the #model with threshold r = 0.5
+predizioni <- predict(modello, type =  'response')
+predizioni[predizioni<=0.5]<- 0
+predizioni[predizioni>0.5]<- 1
+```
+
+
+The following scatterplot displays the predicted classifications obtained from the logistic regression model.
+
+```{r scatter2, echo=FALSE}
+#scatterplot of glucose over age, color shows the predicted #diabete levels
+colori1<-ifelse(predizioni==1, 'blue', 'red')
+plot(x=pima$age, y= pima$glucose, col=colori1, xlab = "Age", ylab = "Glucose")
+```
+
+The training misclassification error of this model is
+
+```{r misclassification, include=FALSE}
+#misclassification error for the logistic model obteined by #building the confusion matrix
+confusion_matrix <- table(True=pima$diabetes, 
+                          Predicted=predizioni)
+misclassification_rate <- sum(confusion_matrix-diag(diag(confusion_matrix)))/
+  sum(confusion_matrix)
+```
+
+$\text{Misclassification Error}= \frac{\text{Number of Incorrect Predictions}} {\text{Total Number of Observations}} = 0.263$
+
+The training misclassification error is relatively high. Approximately 26% of the observations are classified incorrectly, which is consistent with the substantial overlap between the two classes observed in the original scatterplot.
+
+# 3. Decision Boundary
+
+The decision boundary is obtained by the equation $P(Y=1\mid x) = P(Y=0 \mid x)$ so we must solve $P(Y=1\mid x) = \frac{1}{2} \Rightarrow \frac{\exp(\beta_0+\beta_1\,\text{glucose}+\beta_2\,\text{age})}{1+\exp(\beta_0+\beta_1\,\text{glucose}+\beta_2\,\text{age})} = \frac{1}{2} \Rightarrow \beta_0+\beta_1\,\text{glucose}+\beta_2\,\text{age} = 0$
+
+Rearranging for glucose gives $glucose =-\frac{(\beta_0+ \beta_1  age)}{\beta_2}$
+
+The corresponding decision boundary is shown in the following figure.
+
+```{r bounary, echo=FALSE}
+#scatterplot, with the classification boundary shown for the #basic model 
+b <-coef(modello)
+x1 <- seq(min(pima$age),
+          max(pima$age),
+          length=10000)
+boundary <- -(b[1] + b[3]*x1)/b[2]
+plot(pima$age,pima$glucose,col=colori1, xlab = "Age", ylab = "Glucose")
+lines(x1,boundary,
+      lwd=2,
+      col="black")
+```
+
+The decision boundary does not appear to capture the underlying relationship between the variables particularly well. A simple linear boundary may be too restrictive for this dataset.
+
+## 4. Different thresholds
+In this section, we investigate how the classification results change when different probability thresholds are used.
+
+First, we reduce the classification threshold to 0.2. Consequently, observations with a predicted probability greater than 0.2 are classified as diabetic. This is the relative scatterplot:
+
+```{r scatter_r02, echo=FALSE}
+#scatterplot of glucose over age, color shows the predicted #diabete levels obtained using the treshold r =0.2 
+predizioni_r02 <- predict(modello, type =  'response')
+predizioni_r02[predizioni_r02<=0.2]<- 0
+predizioni_r02[predizioni_r02>0.2]<- 1
+colori_r02 <- ifelse(predizioni_r02==1, 'blue', 'red')
+plot(x=pima$age, y= pima$glucose, col=colori_r02, xlab = "Age", ylab = "Glucose")
+```
+
+We can see that the number of predicted cases of diabete increase significantly. Conversely, increasing the threshold to 0.8 leads to a much smaller number of positive classifications, as shown in the following plot.
+
+```{r scatter_r08, echo=FALSE}
+#scatterplot of glucose over age, color shows the predicted #diabete levels obtained using the treshold r =0.8
+predizioni_r08 <- predict(modello, type =  'response')
+predizioni_r08[predizioni_r08<=0.8]<- 0
+predizioni_r08[predizioni_r08>0.8]<- 1
+colori_r08 <- ifelse(predizioni_r08==1, 'blue', 'red')
+plot(x=pima$age, y= pima$glucose, col=colori_r08, xlab = "Age", ylab = "Glucose")
+```
+
+## 5. Function expansion
+We now perform a basis function expansion by introducing five additional polynomial covariates: $z_1 = glucose^4$, $z_2 = glucose^3 age$, $z_2 = glucose^2 age^2$, $z_2 = glucose age^3$, $z_2 = age^4$. The probabilities in this new model will be $P(Y=1 \mid x)=\frac{\exp(\beta_0+\beta_1\,\text{glucose}+\beta_2\,\text{age}+\beta_4 z_1 + \beta_5 z_2 + \beta_6 z_3 + \beta_7 z_4 + \beta_8 z_5 )}{1+\exp(\beta_0+\beta_1\,\text{glucose}+\beta_2\,\text{age}\beta_4 z_1 + \beta_5 z_2 + \beta_6 z_3 + \beta_7 z_4 + \beta_8 z_5 )}$
+and $P(Y=0 \mid x)=1 -\frac{\exp(\beta_0+\beta_1\,\text{glucose}+\beta_2\,\text{age}+\beta_4 z_1 + \beta_5 z_2 + \beta_6 z_3 + \beta_7 z_4 + \beta_8 z_5 )}{1+\exp(\beta_0+\beta_1\,\text{glucose}+\beta_2\,\text{age}\beta_4 z_1 + \beta_5 z_2 + \beta_6 z_3 + \beta_7 z_4 + \beta_8 z_5 )}$
+
+The predicted classifications obtained from the expanded model are shown in the following scatterplot.
+
+```{r scatter_expanded, echo=FALSE}
+#creation of the variables for the expanded model
+pima$Z1 <- pima$glucose^4
+pima$Z2 <- pima$glucose^3 * pima$age
+pima$Z3 <- pima$glucose^2 * pima$age^2
+pima$Z4 <- pima$glucose * pima$age^3
+pima$Z5 <- pima$age^4
+#logistic regression of diabetes over glucose, age and the #five new variables
+modello_expanded <- glm(diabetes ~ glucose+age+Z1+Z2+Z3+Z4+Z5, 
+                        family = binomial(link = 'logit'),
+                        data = pima)
+pred_expanded <- predict(modello_expanded, 
+                         type= 'response')
+pred_expanded[pred_expanded<=0.5]<- 0
+pred_expanded[pred_expanded>0.5] <- 1
+#scatterplot of glucose over age, color shows the predicted #diabete levels according to the expanded model
+colori_exp <- ifelse(pred_expanded==1, 'blue', 'red')
+plot(x=pima$age,y=pima$glucose, col=colori_exp, xlab = "Age", ylab = "Glucose")
+```
+
+Unlike the original logistic regression model, the decision boundary is not linear and instead takes a curved shape. We can now obtain the missclassification error for this model: $\text{Misclassification Error}= \frac{\text{Number of Incorrect Predictions}} {\text{Total Number of Observations}} = 0.245$
+
+The misclassification error is slightly lower than that of the original logistic regression model. This suggests that the basis function expansion captures additional nonlinear structure in the data and provides a modest improvement in predictive performance on the training set.
+
 
 # Assignment 4. Theory
 
