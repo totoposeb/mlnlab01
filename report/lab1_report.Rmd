@@ -541,6 +541,9 @@ The misclassification error is slightly lower than that of the original logistic
 ## What ways of collecting correct values of the target variable for supervised learning problems are mentioned in the book?
 
 ## How can one express the cost function of linear regression in matrix form?
+In a linear regression model, the predicted values are obtained by the relation $\hat y= X \theta$. We use the squared error loss, whose formula is $𝐿(\hat y(x; 𝜽), 𝑦) =(\hat𝑦(x; 𝜽) − 𝑦)^2$, to estimate $\theta$. The cost function $J(\theta)$ in matrix notation can be written, according to the book, at page 45, as: $J(\theta) = \frac{1}{n}\|X\theta - y\|_2^2$.
+
+
 
 # Appendix: Code
 
