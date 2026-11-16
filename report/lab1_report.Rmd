@@ -1,7 +1,7 @@
 ---
 title: "Computer Lab 1 Block 1"
 subtitle: "732A99 Machine Learning"
-author: "Giulio Collazuol (LiU-ID), Valentín Rapetti (LiU-ID), Sebastián Soriano Pérez (sebso409)"
+author: "Giulio Collazuol (giuco986), Valentín Rapetti (marra415), Sebastián Soriano Pérez (sebso409)"
 date: "`r Sys.Date()`"
 output: pdf_document
 header-includes:
@@ -366,6 +366,127 @@ parkinsons <- read.csv("data/parkinsons.csv", check.names = FALSE)
 # (drops subject#, age, sex, test_time, total_UPDRS)
 parkinsons <- parkinsons[, c("motor_UPDRS", colnames(parkinsons)[7:22])]
 ```
+
+## 1. Data partitioning and scaling
+```{r a2-partitioning}
+n <- dim(parkinsons)[1]
+set.seed(12345)
+id <- sample(1:n, floor(n*0.6))
+
+train <- parkinsons[id,]
+test <- parkinsons[-id,]
+
+# Scale both sets using the same parameters.
+train_scaled <- scale(train)
+
+mean_tr <- attr(train_scaled, "scaled:center")
+std_tr <- attr(train_scaled, "scaled:scale")
+
+train_scaled <- as.data.frame(train_scaled)
+test_scaled <- as.data.frame(scale(test, center=mean_tr, scale=std_tr))
+```
+
+## 2. Linear regression
+
+```{r a2-linreg}
+# Train, predict, and calculate errors.
+# We use ~ . -1 to use all columns for the linear regression and force the intercept to 0
+lrm_fit <- lm( motor_UPDRS~. - 1, data=train_scaled)
+
+train_pred <- predict(lrm_fit)
+train_mse <- mean( (train_scaled$motor_UPDRS - train_pred)**2 )
+
+test_pred <- predict(lrm_fit, newdata=test_scaled)
+test_mse <- mean( (test_scaled$motor_UPDRS - test_pred)**2 )
+
+# Print results
+cat("We obtained MSE-Train:", train_mse, "and MSE-Test:", test_mse, "\n")
+
+coef_table <- summary(lrm_fit)$coefficients
+significant_vars <- coef_table[coef_table[, 4] < 0.01, 4]
+significant_vars <- names(sort(significant_vars))
+cat("The most significant variables are, in order:", significant_vars ,"\n")
+```
+
+We can see that for our simple linear regression we obtain a reasonable MSE for our train dataset, and greater value for the test. When selecting the most significant variables we are interested in the ones with lowest p-value. Having a low p-value shows that there is statistic evidence that the variable and the target response are strongly related. In our case we selected those variables with p-value less than 0.01 (**), which are: DFA, PPE, HNR, Shimmer.APQ11, Jitter.ABS., NHR, Shimmer.APQ5, and Shimmer.
+
+## 3. Functions 
+
+```{r a2-loglikelihood}
+loglikelihood <- function(data, theta, sigma){
+    if( sigma <= 0){
+        return(-Inf)
+    }
+
+    y <- data$motor_UPDRS
+    X <- as.matrix(data[, -1])
+
+    n <- nrow(X)
+
+    # loglikelihood for a normal distribution
+    loglike <- -n/2 *log(2*pi) - n *log(sigma) - 1/(2*sigma**2) *sum( (y - X%*%theta)**2)
+
+    return( loglike )
+}
+```
+
+```{r a2-ridge}
+ridge <- function(data, theta, sigma, lambda){
+    return( -loglikelihood(data, theta, sigma) + lambda*sum(theta**2) )
+}
+```
+
+```{r a2-ridgeOpt}
+ridgeOpt <- function(data, lambda){
+    # optim()  --> theta, sigma
+    fn <- function(param){
+        theta <- param[1:16]
+        sigma <- exp(param[17])
+        return( ridge(data, theta, sigma, lambda) )
+    }
+
+    # Initial values
+    par_init <- c((1:16)*0, log(sd(data$motor_UPDRS)))
+
+    result <- optim(par=par_init, fn=fn, method='BFGS')
+
+    return( list(theta= result$par[1:16],
+                 sigma=exp(result$par[17])) )
+}
+```
+
+```{r a2-dof}
+DF <- function(data, lambda){
+    X <- as.matrix(data[, -1])
+    P <- X %*% solve( t(X) %*% X + diag(lambda, ncol(X))) %*% t(X)
+
+    return( sum(diag(P)) )
+}
+```
+
+# 4. Lambda optimization
+```{r a2-lambdas}
+lambdas <- c(1, 100, 1000)
+
+for( lam in lambdas){
+    params <- ridgeOpt(train_scaled, lam)
+
+    X_train <- as.matrix(train_scaled[, -1])
+    pred_train <- X_train %*% params$theta
+    mse_train <- mean((train_scaled$motor_UPDRS - pred_train)^2)
+
+    X_test <- as.matrix(test_scaled[, -1])
+    pred_test <- X_test %*% params$theta
+    mse_test <- mean((test_scaled$motor_UPDRS - pred_test)^2)
+
+    dof <- DF(train_scaled, lam)
+
+    cat("For lambda", lam, "we obtained MSE-Train:", mse_train, "and MSE-Test:", mse_test, "with DOF:", dof,"\n")
+}
+```
+
+We can see that as lambda grows we obtain a higher MSE for the training dataset, and less degrees of freedom. This behaviour is expected; as we increase the value of our regularization parameter (\lambda) we get simpler models that are a worse fit for our training data. However, we can see that the value of the MSE for the test decreases for \lambda = 100, but then increases again for \lambda = 1000. This Shows that without any regularization, our model is overfitting, and when our parameter is too high we are underfitting. 
+
 
 # Assignment 3. Logistic regression and basis function expansion
 
