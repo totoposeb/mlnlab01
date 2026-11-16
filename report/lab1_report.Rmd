@@ -358,6 +358,8 @@ incorrect predictions as well.
 
 # Assignment 2. Linear regression and ridge regression
 
+For this section we will be working with 'parkinsons.csv', a datafile containing information pertaining 42 different patients with early-stage Parkinson's disease. This dataset contains several columns that are not used (such as the patient age, sex, and identification number), and has nearly 5900 entries. The purpose of this section is trying to predict the Parkinson's disease syntom score (motor_UPDRS) using linear regression and Ridge regularization.
+
 ```{r a2-data}
 # check.names = FALSE keeps the original column names, e.g. "Jitter(%)"
 parkinsons <- read.csv("data/parkinsons.csv", check.names = FALSE)
@@ -368,6 +370,9 @@ parkinsons <- parkinsons[, c("motor_UPDRS", colnames(parkinsons)[7:22])]
 ```
 
 ## 1. Data partitioning and scaling
+
+We will be doing a 60/40 train-test partition along all the dataset, obtaining a training dataset with 3525 entries, and a test with 2350. We normalized the training, and used the same parameters to scale the test dataset.
+
 ```{r a2-partitioning}
 n <- dim(parkinsons)[1]
 set.seed(12345)
@@ -405,12 +410,14 @@ cat("We obtained MSE-Train:", train_mse, "and MSE-Test:", test_mse, "\n")
 coef_table <- summary(lrm_fit)$coefficients
 significant_vars <- coef_table[coef_table[, 4] < 0.01, 4]
 significant_vars <- names(sort(significant_vars))
-cat("The most significant variables are, in order:", significant_vars ,"\n")
+#cat("The most significant variables are, in order:", significant_vars ,"\n")
 ```
 
 We can see that for our simple linear regression we obtain a reasonable MSE for our train dataset, and greater value for the test. When selecting the most significant variables we are interested in the ones with lowest p-value. Having a low p-value shows that there is statistic evidence that the variable and the target response are strongly related. In our case we selected those variables with p-value less than 0.01 (**), which are: DFA, PPE, HNR, Shimmer.APQ11, Jitter.ABS., NHR, Shimmer.APQ5, and Shimmer.
 
 ## 3. Functions 
+
+The required functions for calculating the log-likelihood, applying Ridge regularization, estimating the optimal parameters, and computing the degrees of freedom were implemented in R. For the log-likelihood we used that the target variable is a normal distribution, and for a $\mathcal{N}(\mu,\sigma)$ we get: $$log\_likelihood=-\frac{n}{2}\log(2\pi\sigma^2)-\frac{1}{2\sigma^2}\sum(x_j-\mu)^2$$
 
 ```{r a2-loglikelihood}
 loglikelihood <- function(data, theta, sigma){
@@ -423,7 +430,7 @@ loglikelihood <- function(data, theta, sigma){
 
     n <- nrow(X)
 
-    # loglikelihood for a normal distribution
+    # log-likelihood for a normal distribution
     loglike <- -n/2 *log(2*pi) - n *log(sigma) - 1/(2*sigma**2) *sum( (y - X%*%theta)**2)
 
     return( loglike )
@@ -435,6 +442,8 @@ ridge <- function(data, theta, sigma, lambda){
     return( -loglikelihood(data, theta, sigma) + lambda*sum(theta**2) )
 }
 ```
+
+When optimizing the values it is important to recognize that $\sigma$ needs to be non-negative. Therefore we find that it is possible to optimize for the value of $\log(\sigma)$ and then correcting the value when outputting it. For finding the optimal solution we used the 'optim()' function with the 'BFGS' method.
 
 ```{r a2-ridgeOpt}
 ridgeOpt <- function(data, lambda){
@@ -454,7 +463,7 @@ ridgeOpt <- function(data, lambda){
                  sigma=exp(result$par[17])) )
 }
 ```
-
+The calculation for the degrees of freedom is quite straightforward: obtaining the trace of the hat matrix $X(X^T\,X+\lambda\,\mathbf{I})^{-1}\,X^T$
 ```{r a2-dof}
 DF <- function(data, lambda){
     X <- as.matrix(data[, -1])
@@ -485,7 +494,7 @@ for( lam in lambdas){
 }
 ```
 
-We can see that as lambda grows we obtain a higher MSE for the training dataset, and less degrees of freedom. This behaviour is expected; as we increase the value of our regularization parameter (\lambda) we get simpler models that are a worse fit for our training data. However, we can see that the value of the MSE for the test decreases for \lambda = 100, but then increases again for \lambda = 1000. This Shows that without any regularization, our model is overfitting, and when our parameter is too high we are underfitting. 
+We can see that as lambda grows we obtain a higher MSE for the training dataset, and less degrees of freedom. This behaviour is expected; as we increase the value of our regularization parameter ($\lambda$) we get simpler models that are a worse fit for our training data. However, we can see that the value of the MSE for the test decreases for $\lambda = 100$, but then increases again for $\lambda = 1000$. This shows that without any regularization, our model is overfitting, and when our parameter is too high we are underfitting, and $\lambda=100$ being the best result obtained. 
 
 
 # Assignment 3. Logistic regression and basis function expansion
