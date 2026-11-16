@@ -42,15 +42,15 @@ digits$digit <- as.factor(digits$digit)
 n <- dim(digits)[1]
 set.seed(12345)
 id_train <- sample(1:n, floor(n * 0.5))
-train <- digits[id_train,]
+train <- digits[id_train, ]
 
 id_tmp <- setdiff(1:n, id_train)
 set.seed(12345)
 id_valid <- sample(id_tmp, floor(n * 0.25))
-valid <- digits[id_valid,]
+valid <- digits[id_valid, ]
 
 id_test <- setdiff(id_tmp, id_valid)
-test <- digits[id_test,]
+test <- digits[id_test, ]
 ```
 
 The data.frame `digits` was then split into the following data.frames randomly:
@@ -67,10 +67,12 @@ with `set.seed(12345)`.
 ```{r a1-knn30}
 # Fits models
 fit_train <- kknn(
-  digit ~ ., train = train, test = train, k = 30, kernel = "rectangular"
+  digit ~ .,
+  train = train, test = train, k = 30, kernel = "rectangular"
 )
 fit_test <- kknn(
-  digit ~ ., train = train, test = test, k = 30, kernel = "rectangular"
+  digit ~ .,
+  train = train, test = test, k = 30, kernel = "rectangular"
 )
 ```
 
@@ -102,25 +104,26 @@ error_table <- rbind(
   )
 )
 knitr::kable(
-  error_table, digits = 3, format.args = list(nsmall = 3),
-  caption = "Misclassification error per digit and overall (k = 30)."
+  error_table,
+  digits = 3, format.args = list(nsmall = 3),
+  caption = "Misclassification error per digit and overall ($k = 30$)."
 )
 ```
 
-As expected, we observe the train misclassification error (`0.045`) is smaller
-than the test misclassification error (`0.053`). The train error is
+As expected, we observe the train misclassification error ($0.045$) is smaller
+than the test misclassification error ($0.053$). The train error is
 slightly smaller as it is calculated on the same data that is used in the
 KNN model. This small gap shows little overfitting.
 
-The digit `0` has the lowest train error at `0.000` and the third lowest test
-error at `0.013` after the digits `6` and `7`. The digit `6` has the lowest
-test error at `0.000` and is tied for the second lowest train error at `0.010`
-with the digit `2`. This tells us that these digits are the easiest ones to
+The digit $0$ has the lowest train error at $0.000$ and the third lowest test
+error at $0.013$ after the digits $6$ and $7$. The digit $6$ has the lowest
+test error at $0.000$ and is tied for the second lowest train error at $0.010$
+with the digit $2$. This tells us that these digits are the easiest ones to
 recognize in this handwritten set, considering its low resolution.
 
-On the other hand, the digit `4` has the highest train error at `0.091` and the
-highest test error at `0.138`, followed by `8` at `0.103`, and `5` at `0.097`.
-The digit `4` is thus the hardest one to recognize in this dataset.
+On the other hand, the digit $4$ has the highest train error at $0.091$ and the
+highest test error at $0.138$, followed by $8$ at $0.103$, and $5$ at $0.097$.
+The digit $4$ is thus the hardest one to recognize in this dataset.
 
 <!-- Narrower table columns so both confusion matrices fit side by side -->
 \setlength{\tabcolsep}{3pt}
@@ -137,7 +140,7 @@ knitr::kables(
     knitr::kable(cm_test)
   ),
   caption = paste(
-    "Confusion matrices for the 30-nearest neighbour classifier:",
+    "Confusion matrices for the 30-nearest neighbor classifier:",
     "train (left) and test (right).",
     "Rows are the true digits, columns the predicted digits."
   )
@@ -149,15 +152,15 @@ knitr::kables(
 Looking at the confusion matrices, the diagonals tell us most samples are
 correctly classified as expected. Every other cell outside the main diagonal
 contains the samples that were incorrectly classified. On the train data we can
-see the most common error was the digit `1` being misclassified as `2`, followed
-closely by `8` as `1`, which is the most common error on the test data. This
-could be due to the dataset's low resolution which does not allow the `8`'s
+see the most common error was the digit $1$ being misclassified as $2$, followed
+closely by $8$ as $1$, which is the most common error on the test data. This
+could be due to the dataset's low resolution which does not allow the $8$'s
 details in the middle to be displayed clearly. Other common mistakes are
-misclassifying the digit `4` as `7` or the digit `5` as `9`. A higher resolution
+misclassifying the digit $4$ as $7$ or the digit $5$ as $9$. A higher resolution
 dataset may decrease the incidence of these errors.
 
 In conclusion, the 30-NN classifier does a good overall job for this dataset,
-with a test accuracy of `94.7%`.
+with a test accuracy of $94.7\%$.
 
 
 ## 3. Easiest and hardest cases of digit "8"
@@ -177,7 +180,8 @@ plot_digit <- function(i, title) {
   # heatmap() draws row 1 at the bottom, so reverse the rows to show the
   # digit upright; scale = "none" keeps the raw pixel counts
   heatmap(
-    img[8:1,], Colv = NA, Rowv = NA, scale = "none", labRow = NA, labCol = NA,
+    img[8:1, ],
+    Colv = NA, Rowv = NA, scale = "none", labRow = NA, labCol = NA,
     main = title, col = grey(seq(1, 0, length.out = 17)),
     # The frame keeps all five images at the same scale in the PDF
     add.expr = box(col = "grey60")
@@ -192,29 +196,31 @@ for (i in hardest) {
 }
 ```
 
-Here are the two easiest and the three hardest cases for the digit `8`, that is
+Here are the two easiest and the three hardest cases for the digit $8$, that is
 the two with the highest predicted probability and the three with the lowest.
-With the data resolution, we can clearly see the first two are the digit `8`,
+With the data resolution, we can clearly see the first two are the digit $8$,
 while the last three could be easily mistaken for other digits as the
-characteristic round figures from the digit `8` cannot be observed. These could
-be easily mistaken as `1` or `6` or some other digit.
+characteristic round figures from the digit $8$ cannot be observed. These could
+be easily mistaken as $1$ or $6$ or some other digit.
 
 In the 64-dimensional space of our features, these cases are not spatially close
-to the other samples of the digit `8`, and therefore their predicted probability
-of being `8` is low. Most of their 30 closest neighbors in this space belong to
+to the other samples of the digit $8$, and therefore their predicted probability
+of being $8$ is low. Most of their 30 closest neighbors in this space belong to
 other classes.
 
 
-## 4. Misclassification error for K = 1, ..., 30
+## 4. Misclassification error for $k = 1, \ldots, 30$
 
 ```{r a1-misclass}
 get_knn_missclass_error <- function(train, valid, k) {
   # Fits models
   fit_train <- kknn(
-    digit ~ ., train = train, test = train, k = k, kernel = "rectangular"
+    digit ~ .,
+    train = train, test = train, k = k, kernel = "rectangular"
   )
   fit_valid <- kknn(
-    digit ~ ., train = train, test = valid, k = k, kernel = "rectangular"
+    digit ~ .,
+    train = train, test = valid, k = k, kernel = "rectangular"
   )
 
   # Calculates train and validation error rates
@@ -228,50 +234,37 @@ get_knn_missclass_error <- function(train, valid, k) {
 errors <- sapply(1:30, function(k) get_knn_missclass_error(train, valid, k))
 ```
 
-```{r a1-misclass-plot, fig.width=6, fig.height=4, fig.cap="Training and validation misclassification error for k = 1, ..., 30."}
-k_values <- 1:30
-k_opt <- which.min(errors["error_valid",])
-col_train <- "#2a78d6"  # blue
-col_valid <- "#eb6834"  # orange
+```{r a1-misclass-plot, fig.width=6, fig.height=4, fig.cap="Training and validation misclassification error for $k = 1, \\ldots, 30$."}
+# Optimal k: the first one with the lowest validation error
+k_opt <- which.min(errors["error_valid", ])
 
-# Plots an empty plot first so the grid and the k marker sit behind the lines
+# Plots the training and validation errors for each k
 plot(
-  k_values, errors["error_train",], type = "n", xaxt = "n",
-  xlim = c(1, 34), ylim = c(0, max(errors)), las = 1, bty = "l",
-  xlab = "k (number of neighbours)", ylab = "Misclassification error"
+  1:30, errors["error_train", ],
+  type = "l", col = "blue", ylim = range(errors),
+  xlab = "k (number of neighbors)", ylab = "Misclassification error"
 )
-axis(1, at = c(1, seq(5, 30, by = 5)))
-abline(h = axTicks(2), col = "grey90")
+lines(1:30, errors["error_valid", ], col = "red")
+
+# Dashed line and label at the optimal k
 abline(v = k_opt, lty = 2, col = "grey50")
-
-# Adds lines with train and validation errors
-lines(
-  k_values, errors["error_train",], type = "o", pch = 19, cex = 0.7,
-  lwd = 2, col = col_train
-)
-lines(
-  k_values, errors["error_valid",], type = "o", pch = 17, cex = 0.8,
-  lwd = 2, col = col_valid
-)
-
-# Labels at the right end of each line, and the optimal K
-text(30, errors[, 30], c("Training", "Validation"), pos = 4, cex = 0.85)
 text(
-  k_opt, max(errors), paste("optimal k =", k_opt), pos = 4, cex = 0.85,
-  col = "grey30"
+  k_opt, max(errors), paste("optimal k =", k_opt),
+  pos = 4, cex = 0.85, col = "grey30"
 )
 legend(
-  "bottomright", legend = c("Training", "Validation"),
-  col = c(col_train, col_valid), pch = c(19, 17), lwd = 2, bty = "n"
-  )
+  "bottomright",
+  legend = c("Training", "Validation"),
+  col = c("blue", "red"), lty = 1, bty = "n"
+)
 ```
 
-Figure 2 shows a small `k` returns a more flexible and complex model, while a
-large `k` produces a smoother and simpler model. The misclassification errors
-mostly increase as `k` increases. It is self-evident that using `k=1` returns an
-error of `0` on the training data as each observation is its own prediction. For
-the validation set, the error first decreases and is minimized at `k=3` and
-`k=4`. We are using `k=3` as it is the first one.
+Figure 2 shows a small $k$ returns a more flexible and complex model, while a
+large $k$ produces a smoother and simpler model. The misclassification errors
+mostly increase as $k$ increases. It is self-evident that using $k=1$ returns an
+error of $0$ on the training data as each observation is its own prediction. For
+the validation set, the error first decreases and is minimized at $k=3$ and
+$k=4$. We are using $k=3$ as it is the first one.
 
 ```{r a1-misclass-optimal}
 # Sets the optimal value of k
@@ -279,7 +272,8 @@ k <- 3
 
 # Fits a new model to get the test error
 fit_test <- kknn(
-  digit ~ ., train = train, test = test, k = k, kernel = "rectangular"
+  digit ~ .,
+  train = train, test = test, k = k, kernel = "rectangular"
 )
 
 # Gets train and valid results
@@ -294,26 +288,27 @@ knitr::kable(
   ),
   digits = 4, format.args = list(nsmall = 4), row.names = FALSE,
   caption = paste0(
-    "Misclassification errors for the optimal k (k = ", k, ")."
+    "Misclassification errors for the optimal $k$ ($k = ", k, "$)."
   )
 )
 ```
 
-For our chosen 3-NN model, the test error is equal to `0.0240` (`97.6%`
-accuracy), which is very close to the validation error of `0.0251`, so the
+For our chosen 3-NN model, the test error is equal to $0.0240$ ($97.6\%$
+accuracy), which is very close to the validation error of $0.0251$, so the
 validation set was a good guide. Both of these values are considerably larger
-than the train error of `0.0115`, which suggests some overfitting. Figure 2
-shows that at `k=7` both error lines are closest to each other, however the
+than the train error of $0.0115$, which suggests some overfitting. Figure 2
+shows that at $k=7$ both error lines are closest to each other, however the
 validation error is higher at that point. Overall, the 3-NN model has less than
-half the test error of the 30-NN model (`0.053`).
+half the test error of the 30-NN model ($0.053$).
 
 
-## 5. Cross-entropy for K = 1, ..., 30
+## 5. Cross-entropy for $k = 1, \ldots, 30$
 
 ```{r a1-crossentropy}
 get_knn_cross_entropy <- function(train, valid, k) {
   fit_valid <- kknn(
-    digit ~ ., train = train, test = valid, k = k, kernel = "rectangular"
+    digit ~ .,
+    train = train, test = valid, k = k, kernel = "rectangular"
   )
   prob <- fit_valid$prob
 
@@ -329,38 +324,30 @@ cross_entropy <- sapply(
 )
 ```
 
-```{r a1-crossentropy-plot, fig.width=6, fig.height=4, fig.cap="Validation cross-entropy for k = 1, ..., 30."}
-k_values <- 1:30
+```{r a1-crossentropy-plot, fig.width=6, fig.height=4, fig.cap="Validation cross-entropy for $k = 1, \\ldots, 30$."}
+# Optimal k: the one with the lowest validation cross-entropy
 k_opt_ce <- which.min(cross_entropy)
-col_valid <- "#eb6834"  # orange, as the validation line in the Task 4 plot
 
-# Plots an empty plot first so the grid and the k marker sit behind the line
+# Plots the validation cross-entropy for each k (red, as the validation line in
+# Figure 2)
 plot(
-  k_values, cross_entropy, type = "n", xaxt = "n",
-  ylim = c(0, max(cross_entropy)), las = 1, bty = "l",
-  xlab = "k (number of neighbours)", ylab = "Validation cross-entropy"
+  1:30, cross_entropy,
+  type = "l", col = "red",
+  xlab = "k (number of neighbors)", ylab = "Validation cross-entropy"
 )
-axis(1, at = c(1, seq(5, 30, by = 5)))
-abline(h = axTicks(2), col = "grey90")
+
+# Dashed line and label at the optimal k
 abline(v = k_opt_ce, lty = 2, col = "grey50")
-
-# Adds the validation cross-entropy line
-lines(
-  k_values, cross_entropy, type = "o", pch = 17, cex = 0.8,
-  lwd = 2, col = col_valid
-)
-
-# Marks the optimal k
 text(
   k_opt_ce, max(cross_entropy), paste("optimal k =", k_opt_ce),
   pos = 4, cex = 0.85, col = "grey30"
 )
 ```
 
-Figure 3 shows the validation cross-entropy at different values of `k`. Here, we
-observe that the optimal value is `k=6`. We can observe that for small values of
-`k` the cross-entropy is the highest. At `k=1` every misclassified sample gets
-a probability `0` which adds $-log(1\times10^{-15})\approx34.5$ to the sum.
+Figure 3 shows the validation cross-entropy at different values of $k$. Here, we
+observe that the optimal value is $k=6$. We can observe that for small values of
+$k$ the cross-entropy is the highest. At $k=1$ every misclassified sample gets
+a probability $0$ which adds $-\log(1\times10^{-15})\approx34.5$ to the sum.
 
 Using the cross-entropy may suit a multinomial response better because it is the
 minus log-likelihood of the multinomial model. It also uses the predicted
@@ -383,11 +370,11 @@ parkinsons <- parkinsons[, c("motor_UPDRS", colnames(parkinsons)[7:22])]
 # Assignment 3. Logistic regression and basis function expansion
 
 The data file pima-indians-diabetes.csv contains information about the onset of
-diabetes within 5 years in Pima Indians given medical details. The datasets
-contains in the colums nine variables. The ones which will be considered
-in this lab are the second, Plasma glucose concentration a 2 hours in an oral glucose tolerance test;
-the eighth, Body mass index (weight in kg/(height in m)^2); and the 
-ninth, presence of diabetes (0=no or 1=yes)
+diabetes within 5 years in Pima Indians given medical details. The dataset
+contains in the columns nine variables. The ones which will be considered
+in this lab are the second, plasma glucose concentration 2 hours into an oral glucose tolerance test;
+the eighth, age (years); and the 
+ninth, presence of diabetes (0=no or 1=yes).
 
 ```{r a3-data,include=FALSE}
 # No header; columns are in the order listed in the lab PDF
@@ -402,134 +389,173 @@ pima <- read.csv(
 ```
 ## 1. Scatterplot  
 
-The following scatterplot displays plasma glucose concentration against age. Observations are coloured according to diabetes status: blue indicates the presence of diabetes, red indicates its absence.
+The following scatterplot displays plasma glucose concentration against age. Observations are colored according to diabetes status: blue indicates the presence of diabetes, red indicates its absence.
 
-```{r scatter1, echo=FALSE}
-#scatterplot of glucose over age, color shows the real #diabete levels
-colori<-ifelse(pima$diabetes==1, 'blue', 'red')
-plot(x=pima$age, y= pima$glucose, col=colori, xlab = "Age", ylab = "Glucose")
+```{r a3-scatter1, echo=FALSE, fig.width=6, fig.height=4, fig.cap="Plasma glucose concentration against age, colored by the true diabetes status."}
+# scatterplot of glucose over age, color shows the real diabetes levels
+colori <- ifelse(pima$diabetes == 1, "blue", "red")
+plot(x = pima$age, y = pima$glucose, col = colori, xlab = "Age", ylab = "Glucose")
+legend("bottomright",
+  legend = c("Diabetes", "No diabetes"),
+  col = c("blue", "red"), pch = 1, bty = "n"
+)
 ```
 
-From the scatterplot, it appears that glucose concentration is more informative for predicting diabetes than age. However, the two classes exhibit substantial overlap, and no clear separation between diabetic and non-diabetic individuals is visible. Consequently, we do not expect the classification task to be much informative.
+From the scatterplot, it appears that glucose concentration is more informative for predicting diabetes than age. However, the two classes exhibit substantial overlap, and no clear separation between diabetic and non-diabetic individuals is visible. Consequently, we do not expect diabetes to be easy to classify with a logistic regression model.
 
 ## 2. Logistic regression model 
 
 We estimate a logistic regression model using glucose concentration and age as explanatory variables.
-The probabilistic equations are: $P(Y=1 \mid x)=\frac{\exp(\beta_0+\beta_1\,\text{glucose}+\beta_2\,\text{age})}{1+\exp(\beta_0+\beta_1\,\text{glucose}+\beta_2\,\text{age})}$
+The probabilistic equations are: $$P(Y=1 \mid \mathbf{x})=\frac{\exp(\beta_0+\beta_1\,\text{glucose}+\beta_2\,\text{age})}{1+\exp(\beta_0+\beta_1\,\text{glucose}+\beta_2\,\text{age})}$$
 
-and $P(Y=0 \mid x)=1-\frac{\exp(\beta_0+\beta_1\,\text{glucose}+\beta_2\,\text{age})}{1+\exp(\beta_0+\beta_1\,\text{glucose}+\beta_2\,\text{age})}$. We use a classification threshold of r=0.5r = 0.5r=0.5. Therefore, an individual is classified as diabetic whenever the predicted probability of diabetes exceeds 0.5.
+and $$P(Y=0 \mid \mathbf{x})=1-\frac{\exp(\beta_0+\beta_1\,\text{glucose}+\beta_2\,\text{age})}{1+\exp(\beta_0+\beta_1\,\text{glucose}+\beta_2\,\text{age})},$$ with the estimated parameters $\beta_0 = -5.912$, $\beta_1 = 0.0356$ and $\beta_2 = 0.0248$. We use a classification threshold of $r = 0.5$. Therefore, an individual is classified as diabetic whenever the predicted probability of diabetes exceeds 0.5.
 
-```{r logistic_model, include=FALSE}
-# Logistic model of diabetes over glucose and age obtained #with glm function
-modello<- glm(diabetes~glucose+age, family = binomial(link="logit"), 
-              data = pima )
-predizioni <- predict(modello, type =  'response')
-predizioni[predizioni<=0.5]<- 0
-predizioni[predizioni>0.5]<- 1
-# Predicted values of the diabetes variable according to the #model with threshold r = 0.5
-predizioni <- predict(modello, type =  'response')
-predizioni[predizioni<=0.5]<- 0
-predizioni[predizioni>0.5]<- 1
+```{r a3-logistic_model, include=FALSE}
+# Logistic model of diabetes over glucose and age obtained with glm function
+modello <- glm(diabetes ~ glucose + age,
+  family = binomial(link = "logit"),
+  data = pima
+)
+# Predicted values of the diabetes variable according to the model with
+# threshold r = 0.5
+predizioni <- predict(modello, type = "response")
+predizioni[predizioni <= 0.5] <- 0
+predizioni[predizioni > 0.5] <- 1
 ```
 
 
 The following scatterplot displays the predicted classifications obtained from the logistic regression model.
 
-```{r scatter2, echo=FALSE}
-#scatterplot of glucose over age, color shows the predicted #diabete levels
-colori1<-ifelse(predizioni==1, 'blue', 'red')
-plot(x=pima$age, y= pima$glucose, col=colori1, xlab = "Age", ylab = "Glucose")
+```{r a3-scatter2, echo=FALSE, fig.width=6, fig.height=4, fig.cap="Predicted diabetes status of the logistic regression model with threshold $r = 0.5$."}
+# scatterplot of glucose over age, color shows the predicted diabetes levels
+colori1 <- ifelse(predizioni == 1, "blue", "red")
+plot(x = pima$age, y = pima$glucose, col = colori1, xlab = "Age", ylab = "Glucose")
+legend("bottomright",
+  legend = c("Diabetes", "No diabetes"),
+  col = c("blue", "red"), pch = 1, bty = "n"
+)
 ```
 
 The training misclassification error of this model is
 
-```{r misclassification, include=FALSE}
-#misclassification error for the logistic model obteined by #building the confusion matrix
-confusion_matrix <- table(True=pima$diabetes, 
-                          Predicted=predizioni)
-misclassification_rate <- sum(confusion_matrix-diag(diag(confusion_matrix)))/
+```{r a3-misclassification, include=FALSE}
+# misclassification error for the logistic model obtained by building the
+# confusion matrix
+confusion_matrix <- table(
+  True = pima$diabetes,
+  Predicted = predizioni
+)
+misclassification_rate <- sum(confusion_matrix - diag(diag(confusion_matrix))) /
   sum(confusion_matrix)
 ```
 
-$\text{Misclassification Error}= \frac{\text{Number of Incorrect Predictions}} {\text{Total Number of Observations}} = 0.263$
+$$\text{Misclassification Error}= \frac{\text{Number of Incorrect Predictions}} {\text{Total Number of Observations}} = 0.263$$
 
 The training misclassification error is relatively high. Approximately 26% of the observations are classified incorrectly, which is consistent with the substantial overlap between the two classes observed in the original scatterplot.
 
-# 3. Decision Boundary
+## 3. Decision boundary
 
-The decision boundary is obtained by the equation $P(Y=1\mid x) = P(Y=0 \mid x)$ so we must solve $P(Y=1\mid x) = \frac{1}{2} \Rightarrow \frac{\exp(\beta_0+\beta_1\,\text{glucose}+\beta_2\,\text{age})}{1+\exp(\beta_0+\beta_1\,\text{glucose}+\beta_2\,\text{age})} = \frac{1}{2} \Rightarrow \beta_0+\beta_1\,\text{glucose}+\beta_2\,\text{age} = 0$
+The decision boundary is obtained by the equation $P(Y=1\mid \mathbf{x}) = P(Y=0 \mid \mathbf{x})$ so we must solve $$P(Y=1\mid \mathbf{x}) = \frac{1}{2} \Rightarrow \frac{\exp(\beta_0+\beta_1\,\text{glucose}+\beta_2\,\text{age})}{1+\exp(\beta_0+\beta_1\,\text{glucose}+\beta_2\,\text{age})} = \frac{1}{2} \Rightarrow \beta_0+\beta_1\,\text{glucose}+\beta_2\,\text{age} = 0$$
 
-Rearranging for glucose gives $glucose =-\frac{(\beta_0+ \beta_1  age)}{\beta_2}$
+Rearranging for glucose gives $$\text{glucose} =-\frac{(\beta_0+ \beta_2\,\text{age})}{\beta_1} \approx 165.9 - 0.695 \cdot \text{age}$$
 
 The corresponding decision boundary is shown in the following figure.
 
-```{r bounary, echo=FALSE}
-#scatterplot, with the classification boundary shown for the #basic model 
-b <-coef(modello)
+```{r a3-boundary, echo=FALSE, fig.width=6, fig.height=4, fig.cap="Decision boundary (black line) of the logistic regression model, with the predicted diabetes status for threshold $r = 0.5$."}
+# scatterplot, with the classification boundary shown for the basic model
+b <- coef(modello)
 x1 <- seq(min(pima$age),
-          max(pima$age),
-          length=10000)
-boundary <- -(b[1] + b[3]*x1)/b[2]
-plot(pima$age,pima$glucose,col=colori1, xlab = "Age", ylab = "Glucose")
-lines(x1,boundary,
-      lwd=2,
-      col="black")
+  max(pima$age),
+  length = 10000
+)
+boundary <- -(b[1] + b[3] * x1) / b[2]
+plot(pima$age, pima$glucose, col = colori1, xlab = "Age", ylab = "Glucose")
+legend("bottomright",
+  legend = c("Diabetes", "No diabetes"),
+  col = c("blue", "red"), pch = 1, bty = "n"
+)
+lines(x1, boundary,
+  lwd = 2,
+  col = "black"
+)
 ```
 
-The decision boundary does not appear to capture the underlying relationship between the variables particularly well. A simple linear boundary may be too restrictive for this dataset.
+Compared to the true classes, the decision boundary does not appear to capture the underlying relationship between the variables particularly well, as more than half of the diabetic patients lie below the line. A simple linear boundary may be too restrictive for this dataset where the main problem is the huge overlap between the classes.
 
 ## 4. Different thresholds
 In this section, we investigate how the classification results change when different probability thresholds are used.
 
-First, we reduce the classification threshold to 0.2. Consequently, observations with a predicted probability greater than 0.2 are classified as diabetic. This is the relative scatterplot:
+First, we reduce the classification threshold to 0.2. Consequently, observations with a predicted probability greater than 0.2 are classified as diabetic. This is the corresponding scatterplot:
 
-```{r scatter_r02, echo=FALSE}
-#scatterplot of glucose over age, color shows the predicted #diabete levels obtained using the treshold r =0.2 
-predizioni_r02 <- predict(modello, type =  'response')
-predizioni_r02[predizioni_r02<=0.2]<- 0
-predizioni_r02[predizioni_r02>0.2]<- 1
-colori_r02 <- ifelse(predizioni_r02==1, 'blue', 'red')
-plot(x=pima$age, y= pima$glucose, col=colori_r02, xlab = "Age", ylab = "Glucose")
+```{r a3-scatter_r02, echo=FALSE, fig.width=6, fig.height=4, fig.cap="Predicted diabetes status of the logistic regression model with threshold $r = 0.2$."}
+# scatterplot of glucose over age, color shows the predicted diabetes levels
+# obtained using the threshold r = 0.2
+predizioni_r02 <- predict(modello, type = "response")
+predizioni_r02[predizioni_r02 <= 0.2] <- 0
+predizioni_r02[predizioni_r02 > 0.2] <- 1
+colori_r02 <- ifelse(predizioni_r02 == 1, "blue", "red")
+plot(x = pima$age, y = pima$glucose, col = colori_r02, xlab = "Age", ylab = "Glucose")
+legend("bottomright",
+  legend = c("Diabetes", "No diabetes"),
+  col = c("blue", "red"), pch = 1, bty = "n"
+)
 ```
 
-We can see that the number of predicted cases of diabete increase significantly. Conversely, increasing the threshold to 0.8 leads to a much smaller number of positive classifications, as shown in the following plot.
+We can see that the number of predicted cases of diabetes increases considerably. Conversely, increasing the threshold to 0.8 leads to a much smaller number of positive classifications, as shown in the following plot.
 
-```{r scatter_r08, echo=FALSE}
-#scatterplot of glucose over age, color shows the predicted #diabete levels obtained using the treshold r =0.8
-predizioni_r08 <- predict(modello, type =  'response')
-predizioni_r08[predizioni_r08<=0.8]<- 0
-predizioni_r08[predizioni_r08>0.8]<- 1
-colori_r08 <- ifelse(predizioni_r08==1, 'blue', 'red')
-plot(x=pima$age, y= pima$glucose, col=colori_r08, xlab = "Age", ylab = "Glucose")
+```{r a3-scatter_r08, echo=FALSE, fig.width=6, fig.height=4, fig.cap="Predicted diabetes status of the logistic regression model with threshold $r = 0.8$."}
+# scatterplot of glucose over age, color shows the predicted diabetes levels
+# obtained using the threshold r = 0.8
+predizioni_r08 <- predict(modello, type = "response")
+predizioni_r08[predizioni_r08 <= 0.8] <- 0
+predizioni_r08[predizioni_r08 > 0.8] <- 1
+colori_r08 <- ifelse(predizioni_r08 == 1, "blue", "red")
+plot(x = pima$age, y = pima$glucose, col = colori_r08, xlab = "Age", ylab = "Glucose")
+legend("bottomright",
+  legend = c("Diabetes", "No diabetes"),
+  col = c("blue", "red"), pch = 1, bty = "n"
+)
 ```
 
 ## 5. Function expansion
-We now perform a basis function expansion by introducing five additional polynomial covariates: $z_1 = glucose^4$, $z_2 = glucose^3 age$, $z_2 = glucose^2 age^2$, $z_2 = glucose age^3$, $z_2 = age^4$. The probabilities in this new model will be $P(Y=1 \mid x)=\frac{\exp(\beta_0+\beta_1\,\text{glucose}+\beta_2\,\text{age}+\beta_4 z_1 + \beta_5 z_2 + \beta_6 z_3 + \beta_7 z_4 + \beta_8 z_5 )}{1+\exp(\beta_0+\beta_1\,\text{glucose}+\beta_2\,\text{age}\beta_4 z_1 + \beta_5 z_2 + \beta_6 z_3 + \beta_7 z_4 + \beta_8 z_5 )}$
-and $P(Y=0 \mid x)=1 -\frac{\exp(\beta_0+\beta_1\,\text{glucose}+\beta_2\,\text{age}+\beta_4 z_1 + \beta_5 z_2 + \beta_6 z_3 + \beta_7 z_4 + \beta_8 z_5 )}{1+\exp(\beta_0+\beta_1\,\text{glucose}+\beta_2\,\text{age}\beta_4 z_1 + \beta_5 z_2 + \beta_6 z_3 + \beta_7 z_4 + \beta_8 z_5 )}$
+We now perform a basis function expansion by introducing five additional polynomial covariates: $z_1 = \text{glucose}^4$, $z_2 = \text{glucose}^3\,\text{age}$, $z_3 = \text{glucose}^2\,\text{age}^2$, $z_4 = \text{glucose}\,\text{age}^3$, $z_5 = \text{age}^4$. The probabilities in this new model will be $$P(Y=1 \mid \mathbf{x})=\frac{\exp(\beta_0+\beta_1\,\text{glucose}+\beta_2\,\text{age}+\beta_3 z_1 + \beta_4 z_2 + \beta_5 z_3 + \beta_6 z_4 + \beta_7 z_5 )}{1+\exp(\beta_0+\beta_1\,\text{glucose}+\beta_2\,\text{age}+\beta_3 z_1 + \beta_4 z_2 + \beta_5 z_3 + \beta_6 z_4 + \beta_7 z_5 )}$$
+and $$P(Y=0 \mid \mathbf{x})=1 -\frac{\exp(\beta_0+\beta_1\,\text{glucose}+\beta_2\,\text{age}+\beta_3 z_1 + \beta_4 z_2 + \beta_5 z_3 + \beta_6 z_4 + \beta_7 z_5 )}{1+\exp(\beta_0+\beta_1\,\text{glucose}+\beta_2\,\text{age}+\beta_3 z_1 + \beta_4 z_2 + \beta_5 z_3 + \beta_6 z_4 + \beta_7 z_5 )}$$
 
 The predicted classifications obtained from the expanded model are shown in the following scatterplot.
 
-```{r scatter_expanded, echo=FALSE}
-#creation of the variables for the expanded model
+```{r a3-scatter_expanded, echo=FALSE, fig.width=6, fig.height=4, fig.cap="Predicted diabetes status of the logistic regression model with the basis function expansion (threshold $r = 0.5$)."}
+# creation of the variables for the expanded model
 pima$Z1 <- pima$glucose^4
 pima$Z2 <- pima$glucose^3 * pima$age
 pima$Z3 <- pima$glucose^2 * pima$age^2
 pima$Z4 <- pima$glucose * pima$age^3
 pima$Z5 <- pima$age^4
-#logistic regression of diabetes over glucose, age and the #five new variables
-modello_expanded <- glm(diabetes ~ glucose+age+Z1+Z2+Z3+Z4+Z5, 
-                        family = binomial(link = 'logit'),
-                        data = pima)
-pred_expanded <- predict(modello_expanded, 
-                         type= 'response')
-pred_expanded[pred_expanded<=0.5]<- 0
-pred_expanded[pred_expanded>0.5] <- 1
-#scatterplot of glucose over age, color shows the predicted #diabete levels according to the expanded model
-colori_exp <- ifelse(pred_expanded==1, 'blue', 'red')
-plot(x=pima$age,y=pima$glucose, col=colori_exp, xlab = "Age", ylab = "Glucose")
+# logistic regression of diabetes over glucose, age and the five new variables
+modello_expanded <- glm(diabetes ~ glucose + age + Z1 + Z2 + Z3 + Z4 + Z5,
+  family = binomial(link = "logit"),
+  data = pima
+)
+pred_expanded <- predict(modello_expanded,
+  type = "response"
+)
+pred_expanded[pred_expanded <= 0.5] <- 0
+pred_expanded[pred_expanded > 0.5] <- 1
+# scatterplot of glucose over age, color shows the predicted diabetes levels
+# according to the expanded model
+colori_exp <- ifelse(pred_expanded == 1, "blue", "red")
+plot(x = pima$age, y = pima$glucose, col = colori_exp, xlab = "Age", ylab = "Glucose")
+legend("bottomright",
+  legend = c("Diabetes", "No diabetes"),
+  col = c("blue", "red"), pch = 1, bty = "n"
+)
 ```
 
-Unlike the original logistic regression model, the decision boundary is not linear and instead takes a curved shape. We can now obtain the missclassification error for this model: $\text{Misclassification Error}= \frac{\text{Number of Incorrect Predictions}} {\text{Total Number of Observations}} = 0.245$
+```{r a3-misclassification_expanded, include=FALSE}
+# Training misclassification error of the expanded model
+misclass_rate_expanded <- mean(pred_expanded != pima$diabetes)
+```
+
+Unlike the original logistic regression model, the decision boundary is not linear and instead takes a curved shape. We can now obtain the misclassification error for this model: $$\text{Misclassification Error}= \frac{\text{Number of Incorrect Predictions}} {\text{Total Number of Observations}} = 0.245$$
 
 The misclassification error is slightly lower than that of the original logistic regression model. This suggests that the basis function expansion captures additional nonlinear structure in the data and provides a modest improvement in predictive performance on the training set.
 
@@ -537,15 +563,40 @@ The misclassification error is slightly lower than that of the original logistic
 # Assignment 4. Theory
 
 ## Why can it be important to consider various probability thresholds in classification problems?
+When we are dealing with a dataset to train a classification model, and
+the resulting model is calibrated, a threshold of $r=0.5$ minimizes the
+misclassification error. However, at
+times, it is more beneficial to optimize different classification metrics
+(precision, recall, etc.), and it could be more important to correctly identify
+one class over others. The book provides this example: in medical diagnosis, it
+can be worse to incorrectly predict a sick patient is healthy than to predict a
+healthy patient is sick, and this problem can be imbalanced due to the rare
+diseases' low prevalence. The threshold controls the trade-off between false
+positives and false negatives in a confusion matrix (pp. 54, 89-92).
 
 ## What ways of collecting correct values of the target variable for supervised learning problems are mentioned in the book?
+- Recording the target values together with the inputs (p. 16). e.g.: Soccer
+results, historical apartment prices (p. 6).
+
+- Labels can be created by a domain expert based on the input data (p. 16). 
+e.g.: a cardiologist needs to look at each ECG signal and determine the heart
+condition that is present.
+
+- Labels can be created automatically (p. 6). The supervision is not done by a
+human domain expert.
 
 ## How can one express the cost function of linear regression in matrix form?
-In a linear regression model, the predicted values are obtained by the relation $\hat y= X \theta$. We use the squared error loss, whose formula is $𝐿(\hat y(x; 𝜽), 𝑦) =(\hat𝑦(x; 𝜽) − 𝑦)^2$, to estimate $\theta$. The cost function $J(\theta)$ in matrix notation can be written, according to the book, at page 45, as: $J(\theta) = \frac{1}{n}\|X\theta - y\|_2^2$.
+In a linear regression model, the predicted values are obtained by the relation $\hat{\mathbf{y}} = \mathbf{X} \boldsymbol{\theta}$. We use the squared error loss, whose formula is $L(\hat y(\mathbf{x}; \boldsymbol{\theta}), y) =(\hat y(\mathbf{x}; \boldsymbol{\theta}) - y)^2$, to estimate $\boldsymbol{\theta}$. The cost function $J(\boldsymbol{\theta})$ in matrix notation can be written, according to the book, at page 45, as: $J(\boldsymbol{\theta}) = \frac{1}{n}\|\mathbf{X}\boldsymbol{\theta} - \mathbf{y}\|_2^2$.
 
 
 
 # Appendix: Code
 
-```{r appendix, ref.label=setdiff(knitr::all_labels(), c("setup", "appendix")), echo=TRUE, eval=FALSE}
+```{r appendix, results="asis"}
+# Prints the code of every chunk (except setup and this one) as its own block,
+# with the chunk label above it
+for (label in setdiff(knitr::all_labels(), c("setup", "appendix"))) {
+  code <- paste(knitr::knit_code$get(label), collapse = "\n")
+  cat("\n\n**", label, "**\n\n```r\n", code, "\n```\n", sep = "")
+}
 ```
